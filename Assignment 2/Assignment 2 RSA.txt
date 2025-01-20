@@ -1,0 +1,164 @@
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+#include <map>
+#include <vector>
+#include <sstream>
+
+using namespace std;
+
+int gcd(int a, int b) 
+{
+    if (b == 0) 
+    {
+        return a;
+    }
+    return gcd(b, a % b);
+}
+
+int findE(int phi_of_n) {
+    int e = rand() % (phi_of_n - 2) + 2;
+    while (gcd(e, phi_of_n) != 1) 
+    {
+        e = rand() % (phi_of_n - 2) + 2;
+    }
+    return e;
+}
+
+int modPow(int base, int exponent, int modulus) 
+{
+    if (modulus == 1) 
+    {
+        return 0;
+    }
+    int result = 1;
+    base = base % modulus;
+    while (exponent > 0) 
+    {
+        if (exponent % 2 == 1) 
+        {
+            result = (result * base) % modulus;
+        }
+        exponent = exponent >> 1;
+        base = (base * base) % modulus;
+    }
+    return result;
+}
+
+void encryptMessage(const string& message, int e, int n, const map<char, int>& charValues) 
+{
+    cout << "\nEncrypted message:" << endl;
+
+    int count = 1;
+    
+    for (char character : message) {
+        if (charValues.find(character) != charValues.end()) 
+        {
+            int encodedValue = charValues.at(character);
+            int encryptedValue = modPow(encodedValue, e, n);
+            cout << "C" << count++ << ": " << encryptedValue << endl;
+        } 
+        else 
+        {
+            cout << character << ": Character not found in mapping" << endl;
+        }
+    }
+}
+
+void decryptMessage(const string& encryptedMessage, int d, int n) 
+{
+    cout << "\nDecrypted message:" << endl;
+
+    stringstream ss(encryptedMessage);
+    string token;
+    
+    int count = 1;
+    while (ss >> token) 
+    {
+        int encryptedValue = stoi(token);
+        int decryptedValue = modPow(encryptedValue, d, n);
+        cout << "M" << count++ << " = " << encryptedValue << "^"<< d << " mod " << n << " = " << decryptedValue << endl;
+    }
+}
+
+int main() 
+{
+    
+    int p = 73;
+    int q = 151;
+    int n = p * q;
+    int phi_of_n = (p - 1) * (q - 1);
+
+    int e = findE(phi_of_n);
+    int d = 0;
+
+    for (int k = 1; k <= 10000000000000000000000000; k++) 
+    {
+        d = (1 + k * phi_of_n) / e;
+        if ((1 + k * phi_of_n) % e == 0) 
+        {
+            break;
+        }
+    }
+
+    map<char, int> charValues;
+
+    char ch = 'a';
+    int value = 00;
+    while (ch <= 'z') 
+    {
+        charValues[ch] = value;
+        ch++;
+        value++;
+    }
+
+    ch = 'A';
+    value = 26;
+    while (ch <= 'Z') {
+        charValues[ch] = value;
+        ch++;
+        value++;
+    }
+
+    charValues[' '] = 62;
+    charValues['?'] = 66;
+
+    cout << "p: " << p << endl;
+    cout << "q: " << q << endl;
+    cout << "n: " << n << endl;
+    cout << "phi_of_n: " << phi_of_n << endl;
+    cout << "e: " << e << endl;
+    cout << "d: " << d << endl;
+    cout << endl;
+
+    string message = "How are you?";
+
+    cout << "Encoded values for the input message:" << endl;
+    for (char character : message) 
+    {
+        if (charValues.find(character) != charValues.end()) 
+        {
+            cout << character << ": " << charValues[character] << endl;
+        } 
+        else 
+        {
+            cout << character << ": Character not found in mapping" << endl;
+        }
+    }
+
+    string encryptedMessage;
+    for (char character : message) 
+    {
+        if (charValues.find(character) != charValues.end()) 
+        {
+            int encodedValue = charValues.at(character);
+            int encryptedValue = modPow(encodedValue, e, n);
+            encryptedMessage += to_string(encryptedValue) + " ";
+        }
+    }
+
+    encryptMessage(message, e, n, charValues);
+    decryptMessage(encryptedMessage, d, n);
+
+    return 0;
+}
